@@ -25,7 +25,9 @@ void do_event_proc(int x, int y, int buttons) {
 	last_mouse_y = y;
 	last_mouse_buttons = buttons;
 	
-	g_event_proc();
+	if(!g_event_proc) return;
+
+    g_event_proc();
 }
 
 void WS_GetMouse(int* x, int* y, int* buttons) {
@@ -81,7 +83,7 @@ WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
     display.w = w;
     display.h = h;
     #warning Not error handled: fb malloc
-    display.fb = (uint8_t*)malloc(w * h * 4);
+    display.fb = (uint32_t*)malloc(w * h * 4);
     display.id = EM_ASM_INT({
 
         if(!Module.display_list) {
@@ -101,7 +103,7 @@ WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
         
         var resizer = (e) => {
 
-            var display_ratio = 320.0/240.0;
+            var display_ratio = 256.0/240.0;
 
             var window_ratio = 
                 window.innerWidth / window.innerHeight;
@@ -141,12 +143,14 @@ WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
 
         window.addEventListener('resize', resizer);
         new_canvas.addEventListener('mousemove', e => {
-            const scale = 320 / parseInt(new_canvas.style.width);
+            const scale = 256 / parseInt(new_canvas.style.width);
             const new_coords = {
                 x: e.offsetX * scale,
                 y: e.offsetY * scale
             };
             
+            if(!Module.do_event_proc) return;
+
             Module.do_event_proc(new_coords.x, new_coords.y, e.buttons);
         });
 

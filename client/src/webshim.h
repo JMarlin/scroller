@@ -9,7 +9,7 @@ typedef int (*EventDispatchProcedure)();
 typedef struct S_WS_Display {
     int32_t w;
     int32_t h;
-    uint8_t* fb;
+    uint32_t* fb;
     int id;
 } WS_Display;
 
