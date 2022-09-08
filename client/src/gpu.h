@@ -3,6 +3,10 @@
 
 #include <inttypes.h>
 
+#define ATTR_PALETTE(a) ((a) & 0x03)
+#define ATTR_HMIRRORED(a) (((a) & 0x04) ? 0xFF : 0x00)
+#define ATTR_VMIRRORED(a) (((a) & 0x08) ? 0xFF : 0x00)
+
 typedef struct GPU_S {
     uint8_t map[64 * 60]; // = ;
     uint8_t attr[32 * 60]; // = ;

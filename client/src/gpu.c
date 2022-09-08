@@ -7,10 +7,10 @@ uint16_t videoAddressToMapIndex(uint16_t addr) {
         (addr >> 3) & 0x001F;
 }
 
-uint8_t tileByteOffsetFromVideoAddress(uint16_t addr) {
+uint8_t tileByteOffsetFromVideoAddressAndAttribute(uint16_t addr, uint8_t attribute) {
 #warning TODO: Add x and y scrolling
-    int tileXHalf = (addr & 0x0004) >> 2;
-    int tileYOffset = ((addr >> 8) & 0x0007) << 1;
+    uint8_t tileXHalf = ((addr & 0x0004) >> 2) ^ (0x01 & ATTR_HMIRRORED(attribute));
+    uint8_t tileYOffset = (((addr >> 3) & 0x0007) ^ (0x07 & ATTR_VMIRRORED(attribute))) << 1;
 
     return tileYOffset | tileXHalf;
 }
@@ -19,24 +19,35 @@ uint16_t tileBaseOffsetFromTileIndex(GPU* gpu, uint16_t tileMapIndex) {
     return ((uint16_t)gpu->map[tileMapIndex]) << 4;
 }
 
-uint8_t tilePixelFromTileAndVideoAddress(GPU* gpu, uint16_t tileMapIndex, uint16_t addr) {
-    int tileXSubAddr = addr & 0x0003;
-    uint8_t tileByte = gpu->tile[tileBaseOffsetFromTileIndex(gpu, tileMapIndex) + tileByteOffsetFromVideoAddress(addr)];
-    uint8_t tilePixelValue = (tileByte << (3 - tileXSubAddr)) & 0x03;
+uint8_t attributeFromTileMapIndex(GPU* gpu, uint16_t tileMapIndex) {
+    return (gpu->attr[tileMapIndex >> 1] >> (tileMapIndex & 0x0001)) & 0x0F;
+}
 
-    return tilePixelValue;
+uint8_t tileByteFromTileMapIndexAddressAndAttribute(GPU* gpu, uint16_t tileMapIndex, uint16_t addr, uint8_t attribute) {
+    return gpu->tile[tileBaseOffsetFromTileIndex(gpu, tileMapIndex) + tileByteOffsetFromVideoAddressAndAttribute(addr, attribute)];
+}
+uint8_t tilePixelPaletteIndexFromTileByteAddressAndAttribute(uint8_t tileByte, uint16_t addr, uint8_t attribute) {
+    uint8_t tileXSubAddr = (((uint8_t)(addr & 0x0003)) ^ (0x03 & ATTR_HMIRRORED(attribute))) << 1;
+
+    return (tileByte >> (6 - tileXSubAddr)) & 0x03;
+}
+
+uint8_t pixelColorFromPaletteIndexAndAttribute(GPU* gpu, uint8_t tilePixelPaletteIndex, uint8_t attribute) {
+    return tilePixelPaletteIndex
+        ? gpu->palette[ATTR_PALETTE(attribute)][tilePixelPaletteIndex - 1]
+        : gpu->bgColor;
+}
+
+uint8_t tilePixelFromTileAndVideoAddress(GPU* gpu, uint16_t tileMapIndex, uint16_t addr) {
+    uint8_t attribute = attributeFromTileMapIndex(gpu, tileMapIndex);
+    uint8_t tileByte = tileByteFromTileMapIndexAddressAndAttribute(gpu, tileMapIndex, addr, attribute);
+    uint8_t tilePixelPaletteIndex = tilePixelPaletteIndexFromTileByteAddressAndAttribute(tileByte, addr, attribute);
+
+    return pixelColorFromPaletteIndexAndAttribute(gpu, tilePixelPaletteIndex, attribute);
 }
 
 uint32_t lookUpPixel(GPU* gpu, uint16_t addr) {
-    uint16_t row = addr >> 8;
-    uint16_t col = addr & 0xFF;
-
     uint16_t tileMapIndex = videoAddressToMapIndex(addr);
-    uint8_t tilePixelValue = tilePixelFromTileAndVideoAddress(gpu, tileMapIndex, addr);
 
-    //Look up attribute cell on attribute map
-#warning TODO: Support h-flip attribute
-#warning TODO: Support v-flip attribute
-    uint16_t attrAddress = ((addr >> 3) & 0xFFE0) | ((addr >> 1) & 0x001F);
-    uint8_t attrValue = (gpu->attr[attrAddress] >> (addr >> 1)) & 0x0F;
+    return tilePixelColorFromTileAndVideoAddress(gpu, tileMapIndex, addr);
 }
