@@ -2373,13 +2373,13 @@ void render() {
 }
 
 void debugPrintGpuPixel(GPU* gpu, uint16_t addr) {
-    printf("Pixel %04X tile map index: %04X\n", addr, videoAddressToMapIndex(addr));
-    printf("Pixel %04X tile base address: %04X\n", addr, tileBaseOffsetFromTileIndex(gpu, videoAddressToMapIndex(addr)));
-    printf("Pixel %04X tile byte offset: %02X\n", addr, tileByteOffsetFromVideoAddressAndAttribute(addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))));
-    printf("Pixel %04X byte value: %02X\n", addr, tileByteFromTileMapIndexAddressAndAttribute(gpu, videoAddressToMapIndex(addr), addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))));
-    printf("Pixel %04X attrubute: %02X\n", addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr)));
-    printf("Pixel %04X palette index: %02X\n", addr, tilePixelPaletteIndexFromTileByteAddressAndAttribute(tileByteFromTileMapIndexAddressAndAttribute(gpu, videoAddressToMapIndex(addr), addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))), addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))));
-    printf("Pixel %04X color: %08X\n", addr, lookUpPixel(gpu, addr));
+    //printf("Pixel %04X tile map index: %04X\n", addr, videoAddressToMapIndex(addr));
+    //printf("Pixel %04X tile base address: %04X\n", addr, tileBaseOffsetFromTileIndex(gpu, videoAddressToMapIndex(addr)));
+    //printf("Pixel %04X tile byte offset: %02X\n", addr, tileByteOffsetFromVideoAddressAndAttribute(addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))));
+    //printf("Pixel %04X byte value: %02X\n", addr, tileByteFromTileMapIndexAddressAndAttribute(gpu, videoAddressToMapIndex(addr), addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))));
+    //printf("Pixel %04X attrubute: %02X\n", addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr)));
+    //printf("Pixel %04X palette index: %02X\n", addr, tilePixelPaletteIndexFromTileByteAddressAndAttribute(tileByteFromTileMapIndexAddressAndAttribute(gpu, videoAddressToMapIndex(addr), addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))), addr, attributeFromTileMapIndex(gpu, videoAddressToMapIndex(addr))));
+    //printf("Pixel %04X color: %08X\n", addr, lookUpPixel(gpu, addr));
 }
 
 int main(int argc, char* argv[]) {

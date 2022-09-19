@@ -20,16 +20,16 @@ typedef struct GPU_S {
     uint8_t attr[32 * 60]; 
     uint8_t tile[256 * 16]; 
     uint32_t palette[4][3]; 
-    unit32_t sprites[32];
+    uint32_t sprites[32];
     uint32_t bgColor; 
 } GPU;
 
 uint16_t videoAddressToMapIndex(uint16_t addr);
-uint8_t tileByteOffsetFromVideoAddressAndAttribute(uint16_t addr, uint8_t attribute);
+uint8_t tileByteOffsetFromCoordinatesAndAttribute(uint8_t x, uint8_t y, uint8_t attribute);
 uint16_t tileBaseOffsetFromTileIndex(GPU* gpu, uint16_t tileMapIndex);
 uint8_t attributeFromTileMapIndex(GPU* gpu, uint16_t tileMapIndex);
-uint8_t tileByteFromTileMapIndexAddressAndAttribute(GPU* gpu, uint16_t tileMapIndex, uint16_t addr, uint8_t attribute);
-uint8_t tilePixelPaletteIndexFromTileByteAddressAndAttribute(uint8_t tileByte, uint16_t addr, uint8_t attribute);
+uint8_t tileByteFromTileMapIndexCoordinatesAndAttribute(GPU* gpu, uint16_t tileMapIndex, uint8_t x, uint8_t y, uint8_t attribute);
+uint8_t tilePixelPaletteIndexFromTileByteCoordinatesAndAttribute(uint8_t tileByte, uint8_t x, uint8_t y, uint8_t attribute);
 uint32_t pixelColorFromPaletteIndexAndAttribute(GPU* gpu, uint8_t tilePixelPaletteIndex, uint8_t attribute);
 uint32_t tilePixelColorFromTileAndVideoAddress(GPU* gpu, uint16_t tileMapIndex, uint16_t addr);
 uint32_t lookUpPixel(GPU* gpu, uint16_t addr);

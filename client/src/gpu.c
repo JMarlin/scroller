@@ -27,8 +27,8 @@ uint8_t tileByteFromTileMapIndexCoordinatesAndAttribute(GPU* gpu, uint16_t tileM
     return gpu->tile[tileBaseOffsetFromTileIndex(gpu, tileMapIndex) + tileByteOffsetFromCoordinatesAndAttribute(x, y, attribute)];
 }
 
-uint8_t tilePixelPaletteIndexFromTileByteAddressAndAttribute(uint8_t tileByte, uint16_t addr, uint8_t attribute) {
-    uint8_t tileXSubAddr = (((uint8_t)(addr & 0x0003)) ^ (0x03 & ATTR_HMIRRORED(attribute))) << 1;
+uint8_t tilePixelPaletteIndexFromTileByteCoordinatesAndAttribute(uint8_t tileByte, uint8_t x, uint8_t y, uint8_t attribute) {
+    uint8_t tileXSubAddr = ((x & 0x0003) ^ (0x03 & ATTR_HMIRRORED(attribute))) << 1;
 
     return (tileByte >> (6 - tileXSubAddr)) & 0x03;
 }
@@ -43,7 +43,7 @@ uint32_t tilePixelIndexFromTileAndVideoAddress(GPU* gpu, uint16_t tileMapIndex, 
     uint8_t attribute = attributeFromTileMapIndex(gpu, tileMapIndex);
     uint8_t tileByte = tileByteFromTileMapIndexCoordinatesAndAttribute(gpu, tileMapIndex, VIDEO_ADDR_XPOS(addr), VIDEO_ADDR_YPOS(addr), attribute);
 
-    return tilePixelPaletteIndexFromTileByteAddressAndAttribute(tileByte, addr, attribute);
+    return tilePixelPaletteIndexFromTileByteCoordinatesAndAttribute(tileByte, VIDEO_ADDR_XPOS(addr), VIDEO_ADDR_YPOS(addr), attribute);
 }
 
 uint8_t videoAddressToSpriteIndex(GPU* gpu, int* spriteFound, uint16_t addr) {
@@ -66,14 +66,18 @@ uint8_t videoAddressToSpriteIndex(GPU* gpu, int* spriteFound, uint16_t addr) {
 }
 
 uint8_t spritePixelIndexFromIndexAndVideoAddress(GPU* gpu, uint8_t spriteIndex, uint16_t addr) {
+    uint8_t virtual_x = VIDEO_ADDR_XPOS(addr) - SPRITE_X(gpu->sprites[spriteIndex]);
+    uint8_t virtual_y = VIDEO_ADDR_YPOS(addr) - SPRITE_Y(gpu->sprites[spriteIndex]);
     
     uint8_t tileByte = tileByteFromTileMapIndexCoordinatesAndAttribute(
         gpu,
         SPRITE_TILE_INDEX(gpu->sprites[spriteIndex]),
-        VIDEO_ADDR_XPOS(addr) - SPRITE_X(gpu->sprites[spriteIndex]),
-        VIDEO_ADDR_YPOS(addr) - SPRITE_Y(gpu->sprites[spriteIndex]),
+        virtual_x,
+        virtual_y,
         SPRITE_ATTR(gpu->sprites[spriteIndex])
     );
+
+    return tilePixelPaletteIndexFromTileByteCoordinatesAndAttribute(tileByte, virtual_x, virtual_y, SPRITE_ATTR(gpu->sprites[spriteIndex]));
 }
 
 uint32_t lookUpPixel(GPU* gpu, uint16_t addr) {
@@ -94,7 +98,7 @@ uint32_t lookUpPixel(GPU* gpu, uint16_t addr) {
         ? pixelIndex
         : tilePixelIndexFromTileAndVideoAddress(gpu, tileMapIndex, addr);
 
-    return pixelColorFromIndexAndAttribute(
+    return pixelColorFromPaletteIndexAndAttribute(
         gpu,
         pixelIndex,
         isSpritePixel
