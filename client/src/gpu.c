@@ -15,16 +15,12 @@ uint8_t tileByteOffsetFromCoordinatesAndAttribute(uint8_t x, uint8_t y, uint8_t 
     return tileYOffset | tileXHalf;
 }
 
-uint16_t tileBaseOffsetFromTileIndex(GPU* gpu, uint16_t tileMapIndex) {
-    return ((uint16_t)gpu->map[tileMapIndex]) << 4;
-}
-
 uint8_t attributeFromTileMapIndex(GPU* gpu, uint16_t tileMapIndex) {
     return (gpu->attr[tileMapIndex >> 1] >> (tileMapIndex & 0x0001)) & 0x0F;
 }
 
-uint8_t tileByteFromTileMapIndexCoordinatesAndAttribute(GPU* gpu, uint16_t tileMapIndex, uint8_t x, uint8_t y, uint8_t attribute) {
-    return gpu->tile[tileBaseOffsetFromTileIndex(gpu, tileMapIndex) + tileByteOffsetFromCoordinatesAndAttribute(x, y, attribute)];
+uint8_t tileByteFromTileMapIndexCoordinatesAndAttribute(GPU* gpu, uint16_t tileIndex, uint8_t x, uint8_t y, uint8_t attribute) {
+    return gpu->tile[(((uint16_t)tileIndex) << 4) + tileByteOffsetFromCoordinatesAndAttribute(x, y, attribute)];
 }
 
 uint8_t tilePixelPaletteIndexFromTileByteCoordinatesAndAttribute(uint8_t tileByte, uint8_t x, uint8_t y, uint8_t attribute) {
@@ -41,7 +37,7 @@ uint32_t pixelColorFromPaletteIndexAndAttribute(GPU* gpu, uint8_t tilePixelPalet
 
 uint32_t tilePixelIndexFromTileAndVideoAddress(GPU* gpu, uint16_t tileMapIndex, uint16_t addr) {
     uint8_t attribute = attributeFromTileMapIndex(gpu, tileMapIndex);
-    uint8_t tileByte = tileByteFromTileMapIndexCoordinatesAndAttribute(gpu, tileMapIndex, VIDEO_ADDR_XPOS(addr), VIDEO_ADDR_YPOS(addr), attribute);
+    uint8_t tileByte = tileByteFromTileMapIndexCoordinatesAndAttribute(gpu, gpu->map[tileMapIndex], VIDEO_ADDR_XPOS(addr), VIDEO_ADDR_YPOS(addr), attribute);
 
     return tilePixelPaletteIndexFromTileByteCoordinatesAndAttribute(tileByte, VIDEO_ADDR_XPOS(addr), VIDEO_ADDR_YPOS(addr), attribute);
 }
@@ -54,6 +50,7 @@ uint8_t videoAddressToSpriteIndex(GPU* gpu, int* spriteFound, uint16_t addr) {
 
     //TODO: Support multi-tile sprites
     for(uint8_t i = 0; i < 32; i++) if(
+        SPRITE_ACTIVE(gpu->sprites[i]) &&
         xpos >= SPRITE_X(gpu->sprites[i]) &&
         xpos < (SPRITE_X(gpu->sprites[i]) + 8) &&
         ypos >= SPRITE_Y(gpu->sprites[i]) &&

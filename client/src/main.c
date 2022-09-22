@@ -86,14 +86,14 @@ GPU gpu = {
         0xE4, 0xE4,
         0xE4, 0xE4,
 
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
-        0x00, 0x00,
+        0x55, 0x55,
+        0x40, 0x01,
+        0x40, 0x01,
+        0x40, 0x01,
+        0x40, 0x01,
+        0x40, 0x01,
+        0x40, 0x01,
+        0x55, 0x55,
 
         0x00, 0x00,
         0x00, 0x00,
@@ -2366,10 +2366,23 @@ GPU gpu = {
 
 
 void render() {
+    static int counter = 0;
+
     for(uint16_t addr = 0; addr < (256*240); addr++)
         display.fb[addr] = lookUpPixel(&gpu, addr);
 
     WS_SubmitDisplay(display);
+
+    counter++;
+
+    if(counter != 6) return;
+
+    counter = 0;
+
+    gpu.sprites[0] = 
+        (gpu.sprites[0] & 0x0000FFFF)
+        | (((uint32_t)(SPRITE_X(gpu.sprites[0]) + 1)) << 24)
+        | (((uint32_t)(SPRITE_Y(gpu.sprites[0]) + 1)) << 16);
 }
 
 void debugPrintGpuPixel(GPU* gpu, uint16_t addr) {
@@ -2385,6 +2398,7 @@ void debugPrintGpuPixel(GPU* gpu, uint16_t addr) {
 int main(int argc, char* argv[]) {
     display = WS_CreateDisplay(256, 240);
     debugPrintGpuPixel(&gpu, 7);
+    gpu.sprites[0] = 0x01010210;
     WS_SetRenderLoopProc(render);
     WS_StartRenderLoop();
 }

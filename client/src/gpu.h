@@ -10,7 +10,8 @@
 #define SPRITE_X(s) ((uint8_t)(((s) >> 24) & 0xFF))
 #define SPRITE_Y(s) ((uint8_t)(((s) >> 16) & 0xFF))
 #define SPRITE_TILE_INDEX(s) ((uint8_t)(((s) >> 8) & 0xFF))
-#define SPRITE_ATTR(s) ((uint8_t)((s) & 0xFF))
+#define SPRITE_ACTIVE(s) ((uint8_t)((s) & 0x10))
+#define SPRITE_ATTR(s) ((uint8_t)((s) & 0x0F))
 
 #define VIDEO_ADDR_XPOS(a) ((uint8_t)((a) & 0xFF))
 #define VIDEO_ADDR_YPOS(a) ((uint8_t)(((a) >> 8) & 0XFF))
