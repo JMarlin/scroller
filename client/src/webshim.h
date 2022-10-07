@@ -2,9 +2,10 @@
 #define WEBSHIM_H
 
 #include <inttypes.h>
+#include "event.h"
 
 typedef void (*RenderProcedure)();
-typedef int (*EventDispatchProcedure)();
+typedef int (*EventDispatchProcedure)(Event* event);
 
 typedef struct S_WS_Display {
     int32_t w;
@@ -23,6 +24,5 @@ void WS_DestroyDisplay(WS_Display display);
 void WS_SubmitDisplay(WS_Display display);
 void WS_ClearDisplay(WS_Display display);
 void WS_UpdateDisplay(WS_Display display);
-void WS_GetMouse(int* x, int* y, int* buttons);
 
 #endif //WEBSHIM_H

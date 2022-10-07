@@ -2364,6 +2364,8 @@ GPU gpu = {
     .bgColor = 0xFF0000FF
 };
 
+int x_velo = 0;
+int y_velo = 0;
 
 void render() {
     static int counter = 0;
@@ -2381,8 +2383,8 @@ void render() {
 
     gpu.sprites[0] = 
         (gpu.sprites[0] & 0x0000FFFF)
-        | (((uint32_t)(SPRITE_X(gpu.sprites[0]) + 1)) << 24)
-        | (((uint32_t)(SPRITE_Y(gpu.sprites[0]) + 1)) << 16);
+        | (((uint32_t)(SPRITE_X(gpu.sprites[0]) + x_velo)) << 24)
+        | (((uint32_t)(SPRITE_Y(gpu.sprites[0]) + y_velo)) << 16);
 }
 
 void debugPrintGpuPixel(GPU* gpu, uint16_t addr) {
@@ -2395,10 +2397,36 @@ void debugPrintGpuPixel(GPU* gpu, uint16_t addr) {
     //printf("Pixel %04X color: %08X\n", addr, lookUpPixel(gpu, addr));
 }
 
+int handleEvent(Event* event) {
+    if(event->type == KEY) {
+        KeyEvent* keyEvent = (KeyEvent*)event;
+        //printf("Key event: %d\n", ((KeyEvent*)event)->code);
+        y_velo =
+            keyEvent->code == 38
+                ? keyEvent->isUp ? 0 : -1
+                : keyEvent->code == 40
+                    ? keyEvent->isUp
+                        ? 0
+                        : 1
+                    : y_velo;
+        x_velo =
+            keyEvent->code == 37
+                ? keyEvent->isUp ? 0 : -1
+                : keyEvent->code == 39
+                    ? keyEvent->isUp
+                        ? 0
+                        : 1
+                    : x_velo;
+    }
+
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
     display = WS_CreateDisplay(256, 240);
     debugPrintGpuPixel(&gpu, 7);
     gpu.sprites[0] = 0x01010210;
+    WS_StartEventDispatch(handleEvent);
     WS_SetRenderLoopProc(render);
     WS_StartRenderLoop();
 }

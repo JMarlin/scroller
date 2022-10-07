@@ -12,13 +12,13 @@ gpu.o: src/gpu.c src/gpu.h
 
 client: main.bc gpu.bc webshim.bc src/index.html 
 	cp src/index.html ../dist/client/
-	emcc -o ../dist/client/client.js -sEXPORTED_FUNCTIONS=['_main','_do_render_loop_proc','_do_event_proc'] -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc
+	emcc -o ../dist/client/client.js -sEXPORTED_FUNCTIONS=['_main','_do_render_loop_proc','_do_mouse_event','_do_key_event'] -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc
 
-main.bc: src/main.c src/webshim.h src/gpu.h
+main.bc: src/main.c src/webshim.h src/gpu.h src/event.h
 	emcc -c -o main.bc src/main.c -g
 
 gpu.bc: src/gpu.c src/gpu.h
 	emcc -c -o gpu.bc src/gpu.c -g
 
-webshim.bc: src/webshim.c
+webshim.bc: src/webshim.c src/event.h
 	emcc -c -o webshim.bc src/webshim.c -g

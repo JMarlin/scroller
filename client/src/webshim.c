@@ -1,12 +1,10 @@
 #include "webshim.h"
+#include "event.h"
 #include <emscripten.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 EventDispatchProcedure g_event_proc = 0;
-
-int last_mouse_x = 0;
-int last_mouse_y = 0;
-int last_mouse_buttons = 0;
 
 void WS_InitEvents() {
 
@@ -20,20 +18,38 @@ void do_render_loop_proc() {
     g_render_proc();
 }
 
-void do_event_proc(int x, int y, int buttons) {
-	last_mouse_x = x;
-	last_mouse_y = y;
-	last_mouse_buttons = buttons;
-	
-	if(!g_event_proc) return;
-
-    g_event_proc();
+double get_canvas_width() {
+    return EM_ASM_DOUBLE({
+        return Module.display_list[0].canvas.width;
+    }, 0);
 }
 
-void WS_GetMouse(int* x, int* y, int* buttons) {
-	*x = last_mouse_x;
-	*y = last_mouse_y;
-	*buttons = last_mouse_buttons;
+void do_mouse_event(int deltaX, int deltaY, int buttons) {
+
+	if(!g_event_proc) return;
+
+    double scale = 256.0 / get_canvas_width();
+    MouseEvent mouse_event =  {
+        .type = MOUSE,
+        .deltaX = (int)(scale * deltaX),
+        .deltaY = (int)(scale * deltaY),
+        .buttons = buttons
+    };
+ 
+    g_event_proc(&mouse_event);
+}
+
+void do_key_event(int isUp, int code) {
+
+	if(!g_event_proc) return;
+
+    KeyEvent key_event =  {
+        .type = KEY,
+        .isUp = isUp,
+        .code = code
+    };
+ 
+    g_event_proc(&key_event);
 }
 
 void WS_SetRenderLoopProc(RenderProcedure render_proc) {
@@ -49,10 +65,10 @@ void WS_StartRenderLoop() {
 
      EM_ASM_(
 
-         if(!!Module.render_interval) {
+        if(!!Module.render_interval) {
 
-             return;
-         }
+            return;
+        }
 
         //Start render loop
         Module.render_interval = setInterval(function() {
@@ -67,13 +83,9 @@ void WS_StartEventDispatch(EventDispatchProcedure dispatch_proc) {
     g_event_proc = dispatch_proc;
 
     EM_ASM_(
-        Module.do_event_proc = Module.cwrap('do_event_proc', null, ['number', 'number']);
+        Module.do_mouse_event = Module.do_mouse_event || Module.cwrap('do_mouse_event', 0, ['number', 'number', 'number']);
+        Module.do_key_event = Module.do_key_event || Module.cwrap('do_key_event', 0, ['number', 'number']);
     );
-
-    //TODO: Dispatch browser events to the dispatch_proc
-    //      shutdown application if dispatch_proc returns 1
-    #warning Not Implemented: WS_StartEventDispatch
-    #warning Not Implemented: Event type needs to be created and passed to WS_StartEventDispatch
 }
 
 WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
@@ -142,17 +154,9 @@ WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
         };
 
         window.addEventListener('resize', resizer);
-        new_canvas.addEventListener('mousemove', e => {
-            const scale = 256 / parseInt(new_canvas.style.width);
-            const new_coords = {
-                x: e.offsetX * scale,
-                y: e.offsetY * scale
-            };
-            
-            if(!Module.do_event_proc) return;
-
-            Module.do_event_proc(new_coords.x, new_coords.y, e.buttons);
-        });
+        new_canvas.addEventListener('mousemove', function(e) { Module.do_mouse_event(e.offsetX, e.offsetY, e.buttons) });
+        window.addEventListener('keydown', function(e) { Module.do_key_event(0, e.keyCode) } );
+        window.addEventListener('keyup', function(e) { Module.do_key_event(1, e.keyCode) } );
 
         new_canvas.style.cursor = 'none';
         new_canvas.style.position = 'absolute';
