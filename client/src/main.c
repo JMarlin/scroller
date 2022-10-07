@@ -2366,6 +2366,8 @@ GPU gpu = {
 
 int x_velo = 0;
 int y_velo = 0;
+int pos_x = 128;
+int pos_y = 100;
 
 void render() {
     static int counter = 0;
@@ -2383,8 +2385,10 @@ void render() {
 
     gpu.sprites[0] = 
         (gpu.sprites[0] & 0x0000FFFF)
-        | (((uint32_t)(SPRITE_X(gpu.sprites[0]) + x_velo)) << 24)
-        | (((uint32_t)(SPRITE_Y(gpu.sprites[0]) + y_velo)) << 16);
+        //| (((uint32_t)(SPRITE_X(gpu.sprites[0]) + x_velo)) << 24)
+        //| (((uint32_t)(SPRITE_Y(gpu.sprites[0]) + y_velo)) << 16);
+        | ((pos_x & 0xFF) << 24)
+        | ((pos_y & 0xFF) << 16);
 }
 
 void debugPrintGpuPixel(GPU* gpu, uint16_t addr) {
@@ -2417,6 +2421,12 @@ int handleEvent(Event* event) {
                         ? 0
                         : 1
                     : x_velo;
+    }
+
+    if(event->type == MOUSE) {
+        MouseEvent* mouseEvent = (MouseEvent*)event;
+        pos_x += mouseEvent->deltaX;
+        pos_y += mouseEvent->deltaY;
     }
 
     return 0;
