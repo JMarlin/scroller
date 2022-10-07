@@ -2425,8 +2425,8 @@ int handleEvent(Event* event) {
 
     if(event->type == MOUSE) {
         MouseEvent* mouseEvent = (MouseEvent*)event;
-        pos_x += mouseEvent->deltaX;
-        pos_y += mouseEvent->deltaY;
+        pos_x = mouseEvent->x;
+        pos_y = mouseEvent->y;
     }
 
     return 0;

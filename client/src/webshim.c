@@ -2,7 +2,6 @@
 #include "event.h"
 #include <emscripten.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 EventDispatchProcedure g_event_proc = 0;
 
@@ -20,19 +19,19 @@ void do_render_loop_proc() {
 
 double get_canvas_width() {
     return EM_ASM_DOUBLE({
-        return Module.display_list[0].canvas.width;
+        return Module.display_list[0].canvas.offsetWidth;
     }, 0);
 }
 
-void do_mouse_event(int deltaX, int deltaY, int buttons) {
+void do_mouse_event(int x, int y, int buttons) {
 
 	if(!g_event_proc) return;
 
     double scale = 256.0 / get_canvas_width();
     MouseEvent mouse_event =  {
         .type = MOUSE,
-        .deltaX = (int)(scale * deltaX),
-        .deltaY = (int)(scale * deltaY),
+        .x = (int)(scale * x),
+        .y = (int)(scale * y),
         .buttons = buttons
     };
  
