@@ -16,7 +16,7 @@ uint8_t tileByteOffsetFromCoordinatesAndAttribute(uint8_t x, uint8_t y, uint8_t 
 }
 
 uint8_t attributeFromTileMapIndex(GPU* gpu, uint16_t tileMapIndex) {
-    return (gpu->attr[tileMapIndex >> 1] >> (tileMapIndex & 0x0001)) & 0x0F;
+    return (gpu->attr[tileMapIndex >> 1] >> ((1 - (tileMapIndex & 0x0001)) << 2)) & 0x0F;
 }
 
 uint8_t tileByteFromTileMapIndexCoordinatesAndAttribute(GPU* gpu, uint16_t tileIndex, uint8_t x, uint8_t y, uint8_t attribute) {

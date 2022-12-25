@@ -5,20 +5,27 @@ test: test.o gpu.o
 	rm test
 
 test.o: src/test.c src/gpu.h
-	gcc -c -o test.o src/test.c -g
+	gcc -c -o test.o src/test.c -g -fPIC
 
 gpu.o: src/gpu.c src/gpu.h
-	gcc -c -o gpu.o src/gpu.c -g
+	gcc -c -o gpu.o src/gpu.c -g -fPIC
 
-client: main.bc gpu.bc webshim.bc src/index.html 
+client: game.so main.bc gpu.bc webshim.bc module.bc src/index.html 
 	cp src/index.html ../dist/client/
-	emcc -o ../dist/client/client.js -sEXPORTED_FUNCTIONS=['_main','_do_render_loop_proc','_do_mouse_event','_do_key_event'] -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc
+	emcc -o ../dist/client/client.js -sMAIN_MODULE -sASYNCIFY=1 -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc module.bc --embed-file game.so
+
+game.so: gamesrc/main.c src/gpu.h
+	emcc -c -o game.bc gamesrc/main.c -g -fPIC
+	emcc -o game.so -sSIDE_MODULE game.bc
 
 main.bc: src/main.c src/webshim.h src/gpu.h src/event.h
-	emcc -c -o main.bc src/main.c -g
+	emcc -c -o main.bc src/main.c -g -fPIC
 
 gpu.bc: src/gpu.c src/gpu.h
-	emcc -c -o gpu.bc src/gpu.c -g
+	emcc -c -o gpu.bc src/gpu.c -g -fPIC
 
 webshim.bc: src/webshim.c src/event.h
-	emcc -c -o webshim.bc src/webshim.c -g
+	emcc -c -o webshim.bc src/webshim.c -g -fPIC
+
+module.bc: src/module.c src/module.h
+	emcc -c -o module.bc src/module.c -g -fPIC

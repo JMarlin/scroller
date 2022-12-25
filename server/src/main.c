@@ -42,14 +42,18 @@ void HttpSendStatic(int socket, char* filePath, char* mimetype) {
     int length = ftell(file);
     fseek(file, 0, SEEK_SET);
 
+    intToStrN(length, lengthStr, 32);
+
     HttpResponse res = (HttpResponse){
         .protocol = "HTTP/1.1",
         .responseCode = 200,
         .responseDescription = "OK",
-        .headerCount = 2,
+        .headerCount = 4,
         .headers = (HttpHeader[]){
             { "Content-Type", mimetype },
-            { "Content-Length", lengthStr }
+            { "Content-Length", lengthStr },
+            { "Cross-Origin-Opener-Policy", "same-origin" },
+            { "Cross-Origin-Embedder-Policy", "require-corp" }
         },
         .body = ""
     };
@@ -73,6 +77,11 @@ void StaticJSHandler(HttpRequest* request, int socket) {
 
 void StaticWASMHandler(HttpRequest* request, int socket) {
     HttpSendStatic(socket, "../client/client.wasm", "application/wasm");
+}
+
+void StaticGameWASMHandler(HttpRequest* request, int socket) {
+    printf("\nSTATIC GAME WASM HANDLER\n\n");
+    HttpSendStatic(socket, "../client/game.wasm", "application/wasm");
 }
 
 void NotFoundHandler(HttpRequest* request, int socket) {
@@ -104,11 +113,12 @@ void NotFoundHandler(HttpRequest* request, int socket) {
 int main(int argc, char* argv[]) {
 
     EndpointCollection endpoints = (EndpointCollection) {
-        .endpointCount = 3,
+        .endpointCount = 4,
         .endpoints = (Endpoint[]) {
             { .path = "/", .method = "GET", .handler = IndexHandler },
             { .path = "/client.js", .method = "GET", .handler = StaticJSHandler },
-            { .path = "/client.wasm", .method = "GET", .handler = StaticWASMHandler }
+            { .path = "/client.wasm", .method = "GET", .handler = StaticWASMHandler },
+            { .path = "/game.wasm", .method = "GET", .handler = StaticGameWASMHandler }
         },
         .notFoundHandler = NotFoundHandler
     };
