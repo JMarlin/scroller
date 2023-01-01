@@ -10,8 +10,8 @@ steps:
       mkdir dist && \
         mkdir dist/server && \
         cd server && \
-        make server && \
-        cp conf/prod_env.sh dist/server/env.sh
+        make server 
+      cp conf/prod_env.sh dist/server/env.sh
 
 - name: Build Client
   image: emscripten/emsdk
