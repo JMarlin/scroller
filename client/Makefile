@@ -8,7 +8,7 @@ test.o: src/test.c src/gpu.h
 	gcc -c -o test.o src/test.c -g -fPIC
 
 gpu.o: src/gpu.c src/gpu.h
-	gcc -c -o gpu.o src/gpu.c -g -fPIC
+	gcc -c -o gpu.o src/gpu.c -g -fPIC 
 
 client: game.so main.bc gpu.bc webshim.bc module.bc src/index.html 
 	cp src/index.html ../dist/client/
