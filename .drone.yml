@@ -8,6 +8,7 @@ steps:
   commands:
     - |
       mkdir dist && \
+        mkdir dist/server && \
         cd server && \
         make server && \
         cp conf/prod_env.sh dist/server/env.sh
@@ -16,8 +17,9 @@ steps:
   image: emscripten/emsdk
   commands:
     - |
-      cd client && \
-      make client
+      mkdir dist/client && \
+        cd client && \
+        make client
 
 - name: Clone Proxdeploy
   image: alpine/git
