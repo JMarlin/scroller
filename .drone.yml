@@ -18,7 +18,7 @@ steps:
   commands:
     - mkdir dist/client
     - cd client
-    - make client
+    - APP_ROOT="/scroller" make client
     - cd ..
 
 - name: Clone Proxdeploy

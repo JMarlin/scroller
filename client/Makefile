@@ -11,7 +11,7 @@ gpu.o: src/gpu.c src/gpu.h
 	gcc -c -o gpu.o src/gpu.c -g -fPIC
 
 client: game.so main.bc gpu.bc webshim.bc module.bc src/index.html 
-	cp src/index.html ../dist/client/
+	cat src/index.html | envsubst > ../dist/client/index.html
 	emcc -o ../dist/client/client.js -sMAIN_MODULE -sASYNCIFY=1 -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc module.bc --embed-file game.so
 
 game.so: gamesrc/main.c src/gpu.h
