@@ -1,4 +1,5 @@
 *.o
+*.so
 *.bc
 dist/client/**/*
 dist/server/**/*
