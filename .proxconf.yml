@@ -1,0 +1,21 @@
+vmid: 111
+ostemplate: local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz
+storage: vm-images
+hostname: scroller
+onboot: true
+start: true
+rootfs: "10"
+net:
+  name: eth0
+  bridge: vmbr0
+  firewall: 0
+  gw: "192.168.1.1"
+  ip: 192.168.1.216/24
+destroy-existing: true
+artifact-path: dist
+deploy-commands:
+  - |
+    cd /dist/server/ ; \
+    source env.sh ; \
+    nohup ./server> service.log 2>&1 &
+
