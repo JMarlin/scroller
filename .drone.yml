@@ -15,11 +15,21 @@ steps:
 
 - name: Build Client
   image: emscripten/emsdk
+  volumes:
+    - name: cache
+      path: /emsdk/upstream/emscripten/cache
   commands:
     - mkdir dist/client
     - cd client
-    - APP_ROOT="/scroller" make client
+    - make client
     - cd ..
+
+- name: Apply environment settings
+  image: cirocosta/alpine-envsubst
+  environment:
+    APP_ROOT: /scroller
+  commands:
+    - cat client/src/index.html | envsubst > dist/client/index.html
 
 - name: Clone Proxdeploy
   image: alpine/git
@@ -45,3 +55,8 @@ steps:
     - cd proxdeploy  
     - pip3 install -r requirements.txt
     - python3 ./proxdeploy.py .proxconf.yml
+
+volumes:
+- name: cache
+  host:
+    path: /tmp/drone/cache/emsdk
