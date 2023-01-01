@@ -6,27 +6,23 @@ steps:
 - name: Build Server
   image: gcc
   commands:
-    - |
-      mkdir dist && \
-        mkdir dist/server && \
-        cd server && \
-        make server 
-      cp conf/prod_env.sh dist/server/env.sh
+    - mkdir dist
+    - mkdir dist/server
+    - cd server && make server
+    - cp conf/prod_env.sh dist/server/env.sh
 
 - name: Build Client
   image: emscripten/emsdk
   commands:
-    - |
-      mkdir dist/client && \
-        cd client && \
-        make client
+    - mkdir dist/client
+    - cd client && make client
 
 - name: Clone Proxdeploy
   image: alpine/git
   commands:
-  - git clone http://192.168.1.211:3000/jmarlin/proxdeploy.git
-  - cd proxdeploy
-  - git checkout master
+    - git clone http://192.168.1.211:3000/jmarlin/proxdeploy.git
+    - cd proxdeploy
+    - git checkout master
   
 - name: Proxdeploy
   image: python
@@ -42,6 +38,6 @@ steps:
     PROX_PRIV_KEY:
       from_secret: general_private_key
   commands:
-  - cd proxdeploy  
-  - pip3 install -r requirements.txt
-  - python3 ./proxdeploy.py .proxconf.yml
+    - cd proxdeploy  
+    - pip3 install -r requirements.txt
+    - python3 ./proxdeploy.py .proxconf.yml
