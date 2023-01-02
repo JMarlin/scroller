@@ -12,7 +12,7 @@ gpu.o: src/gpu.c src/gpu.h
 
 client: game.so main.bc gpu.bc webshim.bc module.bc src/index.html 
 	cp src/index.html ../dist/client/
-	cp game.wasm ../dist/client/
+	cp game.so ../dist/client/game.wasm
 	emcc -o ../dist/client/client.js -sMAIN_MODULE -sASYNCIFY=1 -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc module.bc --embed-file game.so
 
 game.so: gamesrc/main.c src/gpu.h
