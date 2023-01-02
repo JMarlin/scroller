@@ -116,9 +116,9 @@ int main(int argc, char* argv[]) {
         .endpointCount = 4,
         .endpoints = (Endpoint[]) {
             { .path = "/", .method = "GET", .handler = IndexHandler },
-            { .path = "/scroller/client.js", .method = "GET", .handler = StaticJSHandler },
-            { .path = "/scroller/client.wasm", .method = "GET", .handler = StaticWASMHandler },
-            { .path = "/scroller/game.wasm", .method = "GET", .handler = StaticGameWASMHandler }
+            { .path = "/client.js", .method = "GET", .handler = StaticJSHandler },
+            { .path = "/client.wasm", .method = "GET", .handler = StaticWASMHandler },
+            { .path = "/game.wasm", .method = "GET", .handler = StaticGameWASMHandler }
         },
         .notFoundHandler = NotFoundHandler
     };
