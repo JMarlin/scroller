@@ -7,6 +7,7 @@ int x_velo = 0;
 int y_velo = 0;
 int pos_x = 128;
 int pos_y = 100;
+int current_palette_index = 0;
 
 uint8_t ExampleTile00[] = {
     0b00000000, 0b00000000,
@@ -96,6 +97,18 @@ uint8_t MouseTile[] = {
     0b01010101, 0b00000000
 };
 
+uint8_t IndicatorTile[] = {
+    0b01010101, 0b01010101,
+    0b01010101, 0b01010101,
+    0b01010101, 0b01010101,
+    0b01010101, 0b01010101,
+    0b01010101, 0b01010101,
+    0b01101010, 0b10101001,
+    0b01011010, 0b10100101,
+    0b01010110, 0b10010101
+};
+
+
 typedef struct Slider_S {
     int value;
     int position;
@@ -129,6 +142,7 @@ void Init(GPU* gpu) {
     setGpuTile(gpu, 7, PickTile01);
     setGpuTile(gpu, 8, PickTile10);
     setGpuTile(gpu, 9, PickTile11);
+    setGpuTile(gpu, 10, IndicatorTile);
 
     memset(&gpu->tile[5 << 4], 0, 16);
     memset(&gpu->tile[6 << 4], 0x55, 16);
@@ -144,6 +158,9 @@ void Init(GPU* gpu) {
     gpu->map[64 * 7 + 16] = 0x09;
     gpu->attr[32 * 7 + 8] = 0x01;
 
+    gpu->map[64 * 6 + 10] = 0x0A;
+    gpu->attr[32 * 6 + 5] = 0x11;
+
     gpu->attr[15] = 0x10;
     
     for(int i = 0; i < 8; i++) {
@@ -158,6 +175,7 @@ void Init(GPU* gpu) {
     gpu->palette[0][2] = 0xFFFF0000;
 
     gpu->palette[1][0] = 0xFF000000;
+    gpu->palette[1][1] = 0xFF0000FF;
 
     gpu->sprites[0] = 0x01010410;
     gpu->map[31] = 0x05;
@@ -215,9 +233,25 @@ void HandleEvent(GPU* gpu, Event* event) {
                 ((*loc & 0x3) << shiftAmt);
         }
 
-        for(int i = 0; i < 3; i++) if(map_y == sliders[i].position) {
-            setSlider(gpu, &sliders[i], map_x);
-            break;
+        for(int i = 0; i < 3; i++) {
+
+            if(map_y == sliders[i].position) {
+
+                setSlider(gpu, &sliders[i], map_x);
+
+                break;
+            }
+        }
+
+        for(int i = 0; i < 4; i++) {
+
+            if(map_y == 7 && map_x == (10 + (2 * i))) {
+
+                gpu->map[64 * 6 + 10 + (2 * i)] = 0x0A;
+                gpu->attr[32 * 6 + 5 + i] = 0x11;
+
+                break;
+            }
         }
     }
 }
