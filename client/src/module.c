@@ -1,5 +1,6 @@
 #include "module.h"
 #include "event.h"
+#include "engine.h"
 #include "gpu.h"
 #include <dlfcn.h>
 #include <stdio.h>
