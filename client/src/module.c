@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <emscripten.h>
 
-void call_fp(void (*f)(GameModule), void (*init)(Engine*), void (*event)(Engine*, Event*), void (*render)(Engine*)) {
+void call_fp(void (*f)(GameModule), void (*init)(struct Engine_S*), void (*event)(struct Engine_S*, Event*), void (*render)(struct Engine_S*)) {
 
     GameModule module = {
         .init = init,
@@ -30,9 +30,9 @@ void loadModule(char* moduleName, ModuleInterfaceCallback onComplete) {
         return;
     }
 
-    void (*init)(Engine*) = dlsym(handle, "Init");
-    void (*event)(Engine*, Event*) = dlsym(handle, "HandleEvent");
-    void (*render)(Engine*) = dlsym(handle, "Render");
+    void (*init)(struct Engine_S*) = dlsym(handle, "Init");
+    void (*event)(struct Engine_S*, Event*) = dlsym(handle, "HandleEvent");
+    void (*render)(struct Engine_S*) = dlsym(handle, "Render");
 
     call_fp(onComplete, init, event, render);
 }
