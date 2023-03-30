@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <emscripten.h>
 
-void call_fp(void (*f)(GameModule), void (*init)(GPU*), void (*event)(GPU*, Event*), void (*render)(GPU*)) {
+void call_fp(void (*f)(GameModule), void (*init)(Engine*), void (*event)(Engine*, Event*), void (*render)(Engine*)) {
 
     GameModule module = {
         .init = init,
