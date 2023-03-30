@@ -21,20 +21,20 @@ clientbuild: game.so main.bc engine.bc gpu.bc webshim.bc module.bc src/index.htm
 	emcc -o ../dist/client/client.js -sMAIN_MODULE -sASYNCIFY=1 -sEXPORTED_RUNTIME_METHODS=['cwrap'] main.bc webshim.bc gpu.bc module.bc --embed-file game.so
 
 game.so: gamesrc/main.c src/engine.h src/gpu.h
-	emcc -c -o game.bc gamesrc/main.c -g -fPIC
+	emcc -c -Wno-incompatible-function-pointer-types -o game.bc gamesrc/main.c -g -fPIC
 	emcc -o game.so -sSIDE_MODULE game.bc
 
 main.bc: src/main.c src/webshim.h src/engine.h src/gpu.h src/event.h
-	emcc -c -o main.bc src/main.c -g -fPIC
+	emcc -c -Wno-incompatible-function-pointer-types -o main.bc src/main.c -g -fPIC
 
 engine.bc: src/engine.c src/engine.h
-	emcc -c -o engine.bc src/engine.c -g -fPIC
+	emcc -c -Wno-incompatible-function-pointer-types -o engine.bc src/engine.c -g -fPIC
 
 gpu.bc: src/gpu.c src/gpu.h
-	emcc -c -o gpu.bc src/gpu.c -g -fPIC
+	emcc -c -Wno-incompatible-function-pointer-types -o gpu.bc src/gpu.c -g -fPIC
 
 webshim.bc: src/webshim.c src/event.h
-	emcc -c -o webshim.bc src/webshim.c -g -fPIC
+	emcc -c -Wno-incompatible-function-pointer-types -o webshim.bc src/webshim.c -g -fPIC
 
 module.bc: src/module.c src/module.h
-	emcc -c -o module.bc src/module.c -g -fPIC
+	emcc -c -Wno-incompatible-function-pointer-types -o module.bc src/module.c -g -fPIC
