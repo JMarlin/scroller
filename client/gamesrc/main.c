@@ -196,9 +196,9 @@ GameState* createInitialGameState() {
         .yPosition = 0,
         .currentPaletteIndex = 0,
         .sliders = { 
-            { .position =  9, .value = 0, .onchange = &updateRedValue },
-            { .position = 11, .value = 0,  .onchange = &updateGreenValue },
-            { .position = 13, .value = 0, .onchange = &updateBlueValue }
+            { .position =  9, .value = 0, .onchange = (SliderChangeHandler)&updateRedValue },
+            { .position = 11, .value = 0,  .onchange = (SliderChangeHandler)&updateGreenValue },
+            { .position = 13, .value = 0, .onchange = (SliderChangeHandler)&updateBlueValue }
         }
     };
 
