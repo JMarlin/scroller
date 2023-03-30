@@ -30,9 +30,9 @@ void loadModule(char* moduleName, ModuleInterfaceCallback onComplete) {
         return;
     }
 
-    void (*init)(GPU*) = dlsym(handle, "Init");
-    void (*event)(GPU*, Event*) = dlsym(handle, "HandleEvent");
-    void (*render)(GPU*) = dlsym(handle, "Render");
+    void (*init)(Engine*) = dlsym(handle, "Init");
+    void (*event)(Engine*, Event*) = dlsym(handle, "HandleEvent");
+    void (*render)(Engine*) = dlsym(handle, "Render");
 
     call_fp(onComplete, init, event, render);
 }
