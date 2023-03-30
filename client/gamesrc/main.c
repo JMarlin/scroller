@@ -1,13 +1,25 @@
 #include "../src/gpu.h"
 #include "../src/event.h"
-#include <stdio.h>
+#include "../src/engine.h"
 #include <memory.h>
+#include <stdlib.h>
 
-int x_velo = 0;
-int y_velo = 0;
-int pos_x = 128;
-int pos_y = 100;
-int current_palette_index = 0;
+typedef void (*SliderChangeHandler)(Engine* engine, struct Slider_S*);
+
+typedef struct Slider_S {
+    int value;
+    int position;
+    SliderChangeHandler onchange;
+} Slider;
+
+typedef struct GameState_S {
+    int xVelocity;
+    int yVelocity;
+    int xPosition;
+    int yPosition;
+    Slider sliders[3];
+    int currentPaletteIndex;
+} GameState;
 
 uint8_t ExampleTile00[] = {
     0b00000000, 0b00000000,
@@ -102,38 +114,104 @@ uint8_t IndicatorTile[] = {
     0b01010101, 0b01010101,
     0b01010101, 0b01010101,
     0b01010101, 0b01010101,
-    0b01010101, 0b01010101,
-    0b01101010, 0b10101001,
-    0b01011010, 0b10100101,
-    0b01010110, 0b10010101
+    0b01111111, 0b11111101,
+    0b01011111, 0b11110101,
+    0b01010111, 0b11010101,
+    0b01010101, 0b01010101
 };
 
+void setSlider(Engine* engine, Slider* slider, int value) {
 
-typedef struct Slider_S {
-    int value;
-    int position;
-} Slider;
-
-Slider sliders[3] = { 
-    { .position = 9, .value = 0 },
-    { .position = 11, .value = 0 },
-    { .position = 13, .value = 0 }
-};
-
-void setSlider(GPU* gpu, Slider* slider, int value) {
     slider->value = value;
-    memset(&gpu->map[64 * slider->position], 0x02, value + 1);
-    memset(&gpu->map[64 * slider->position + value + 1], 0x00, 31 - value);
+    memset(&engine->gpu->map[64 * slider->position], 0x02, value + 1);
+    memset(&engine->gpu->map[64 * slider->position + value + 1], 0x00, 31 - value);
+
+    slider->onchange(engine, slider);
 }
 
 void setGpuTile(GPU* gpu, int index, uint8_t* source) {
+
     index <<= 4;
-    for(int i = 0; i < 16; i++) {
+
+    for(int i = 0; i < 16; i++) 
         gpu->tile[index+i] = source[i];
-    }
 }
 
-void Init(GPU* gpu) {
+uint32_t getCurrentColor(Engine* engine) {
+
+    GameState* state = (GameState*)engine->state;
+
+    if(state->currentPaletteIndex == 0)
+        return engine->gpu->bgColor;
+
+    return engine->gpu->palette[0][state->currentPaletteIndex - 1];
+}
+
+void setCurrentColor(Engine* engine, uint32_t color) {
+
+    GameState* state = (GameState*)engine->state;
+
+    if(state->currentPaletteIndex == 0) {
+
+        engine->gpu->bgColor = color;
+
+        return;
+    }
+
+    engine->gpu->palette[0][state->currentPaletteIndex - 1] = color;
+}
+
+void updateRedValue(Engine* engine, Slider* slider) {
+
+    setCurrentColor(
+        engine,
+        (getCurrentColor(engine) & 0xFFFFFF00) |
+            (((slider->value << 3) & 0xFF) << 0) );
+}
+
+void updateGreenValue(Engine* engine, Slider* slider) {
+
+    setCurrentColor(
+        engine,
+        (getCurrentColor(engine) & 0xFFFF00FF) |
+            (((slider->value << 3) & 0xFF) << 8) );
+}
+
+void updateBlueValue(Engine* engine, Slider* slider) {
+
+    setCurrentColor(
+        engine,
+        (getCurrentColor(engine) & 0xFF00FFFF) |
+            (((slider->value << 3) & 0xFF) << 16) );
+}
+
+GameState* createInitialGameState() {
+
+    GameState* state = (void*)malloc(sizeof(GameState));
+
+    *state = (GameState) {
+        .xVelocity = 0,
+        .xPosition = 0,
+        .yVelocity = 0,
+        .yPosition = 0,
+        .currentPaletteIndex = 0,
+        .sliders = { 
+            { .position =  9, .value = 0, .onchange = &updateRedValue },
+            { .position = 11, .value = 0,  .onchange = &updateGreenValue },
+            { .position = 13, .value = 0, .onchange = &updateBlueValue }
+        }
+    };
+
+    return state;
+}
+
+void Init(Engine* engine) {
+
+    GPU* gpu = engine->gpu;
+    GameState* state = (void*)createInitialGameState(); 
+
+    engine->state = (void*)state;
+
     setGpuTile(gpu, 0, ExampleTile00);
     setGpuTile(gpu, 1, ExampleTile01);
     setGpuTile(gpu, 2, ExampleTile10);
@@ -175,44 +253,48 @@ void Init(GPU* gpu) {
     gpu->palette[0][2] = 0xFFFF0000;
 
     gpu->palette[1][0] = 0xFF000000;
-    gpu->palette[1][1] = 0xFF0000FF;
+    gpu->palette[1][1] = 0xFF000000;
+    gpu->palette[1][2] = 0xFF0000FF;
 
     gpu->sprites[0] = 0x01010410;
     gpu->map[31] = 0x05;
 
     for(int i = 0; i < 3; i++)
-        setSlider(gpu, &sliders[i], 31);
+        setSlider(engine, &state->sliders[i], 31);
 }
 
-void HandleEvent(GPU* gpu, Event* event) {
+void HandleEvent(Engine* engine, Event* event) {
+
+    GameState* state = (GameState*)engine->state;
+    GPU* gpu = engine->gpu;
 
     if(event->type == KEY) {
         KeyEvent* keyEvent = (KeyEvent*)event;
-        y_velo =
+        state->yVelocity =
             keyEvent->code == 38
                 ? keyEvent->isUp ? 0 : -1
                 : keyEvent->code == 40
                     ? keyEvent->isUp
                         ? 0
                         : 1
-                    : y_velo;
-        x_velo =
+                    : state->yVelocity;
+        state->xVelocity =
             keyEvent->code == 37
                 ? keyEvent->isUp ? 0 : -1
                 : keyEvent->code == 39
                     ? keyEvent->isUp
                         ? 0
                         : 1
-                    : x_velo;
+                    : state->xVelocity;
     }
 
     if(event->type == MOUSE) {
         MouseEvent* mouseEvent = (MouseEvent*)event;
-        pos_x = mouseEvent->x;
-        pos_y = mouseEvent->y;
+        state->xPosition = mouseEvent->x;
+        state->yPosition = mouseEvent->y;
 
-        int map_x = pos_x >> 3;
-        int map_y = pos_y >> 3;
+        int map_x = state->xPosition >> 3;
+        int map_y = state->yPosition >> 3;
 
         if(!mouseEvent->buttons) return;
 
@@ -235,9 +317,9 @@ void HandleEvent(GPU* gpu, Event* event) {
 
         for(int i = 0; i < 3; i++) {
 
-            if(map_y == sliders[i].position) {
+            if(map_y == state->sliders[i].position) {
 
-                setSlider(gpu, &sliders[i], map_x);
+                setSlider(engine, &state->sliders[i], map_x);
 
                 break;
             }
@@ -247,8 +329,19 @@ void HandleEvent(GPU* gpu, Event* event) {
 
             if(map_y == 7 && map_x == (10 + (2 * i))) {
 
+                gpu->map[64 * 6 + 10 + (2 * state->currentPaletteIndex)] = 0x07;
+                gpu->attr[32 * 6 + 5 + state->currentPaletteIndex] = 0x11;
+
                 gpu->map[64 * 6 + 10 + (2 * i)] = 0x0A;
                 gpu->attr[32 * 6 + 5 + i] = 0x11;
+
+                state->currentPaletteIndex = i;
+
+                int32_t color = getCurrentColor(engine);
+
+                setSlider(engine, &state->sliders[0], ((color >>  0) & 0xFF) >> 3);
+                setSlider(engine, &state->sliders[1], ((color >>  8) & 0xFF) >> 3);
+                setSlider(engine, &state->sliders[2], ((color >> 16) & 0xFF) >> 3);
 
                 break;
             }
@@ -256,9 +349,12 @@ void HandleEvent(GPU* gpu, Event* event) {
     }
 }
 
-void Render(GPU* gpu) {
-    gpu->sprites[0] = 
-        (gpu->sprites[0] & 0x0000FFFF)
-        | ((pos_x & 0xFF) << 24)
-        | ((pos_y & 0xFF) << 16);
+void Render(Engine* engine) {
+
+    GameState* state = (GameState*)engine->state;
+
+    engine->gpu->sprites[0] = 
+        (engine->gpu->sprites[0] & 0x0000FFFF)
+        | ((state->xPosition & 0xFF) << 24)
+        | ((state->yPosition & 0xFF) << 16);
 }

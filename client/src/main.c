@@ -2,23 +2,19 @@
 #include "webshim.h"
 #include "gpu.h"
 #include "module.h"
+#include "engine.h"
 #include <stdlib.h>
 #include <string.h>
 #include <emscripten.h>
 
 WS_Display display;
 
-typedef struct GameAndEngine_S {
-    GPU* gpu;
-    GameModule module;
-} GameAndEngine;
+void render(Engine* engine) {
 
-void render(void* payload) {
-    GameAndEngine* gae = (GameAndEngine*)payload;
-    GPU* gpu = gae->gpu;
-    GameModule module = gae->module;
+    GPU* gpu = engine->gpu;
+    GameModule module = engine->module;
 
-    module.render(gpu);
+    module.render(engine);
 
     for(uint16_t addr = 0; addr < (256*240); addr++)
         display.fb[addr] = lookUpPixel(gpu, addr);
@@ -26,17 +22,15 @@ void render(void* payload) {
     WS_SubmitDisplay(display);
 }
 
-int handleEvent(void* payload, Event* event) {
-    GameAndEngine* gae = (GameAndEngine*)payload;
+int handleEvent(Engine* engine, Event* event) {
 
-    gae->module.event(gae->gpu, event);
+    engine->module.event(engine, event);
 
     return 0;
 }
 
-typedef void (*GameDispatchFunction)(GPU*, int cmd, uint32_t a, uint32_t b);
-
 GPU* initGpu() { 
+
     printf("gpu init\n");
     GPU* gpu = (GPU*)malloc(sizeof(GPU));
     memset(gpu, 0x00, sizeof(GPU));
@@ -45,18 +39,25 @@ GPU* initGpu() {
 };
 
 void startGame(GameModule module) {
+
     GPU* gpu = initGpu();
-    GameAndEngine* gameAndEngine = (GameAndEngine*)malloc(sizeof(GameAndEngine));
+    Engine* engine = (Engine*)malloc(sizeof(Engine));
+
     printf("core gpu->sprites[0]: %d\n", gpu->sprites[0]);
-    module.init(gpu);
-    gameAndEngine->gpu = gpu;
-    gameAndEngine->module = module;
+
+    engine->gpu = gpu;
+    engine->module = module;
+
+    module.init(engine);
+
     display = WS_CreateDisplay(256, 240);
-    WS_StartEventDispatch(handleEvent, (void*)gameAndEngine);
+
+    WS_StartEventDispatch(handleEvent, engine);
     WS_SetRenderLoopProc(render);
-    WS_StartRenderLoop((void*)gameAndEngine);
+    WS_StartRenderLoop(engine);
 }
 
 int main(int argc, char* argv[]) {
+
     loadModule("game.so", startGame); 
 }

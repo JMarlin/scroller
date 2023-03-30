@@ -6,6 +6,7 @@
 #include <emscripten.h>
 
 void call_fp(void (*f)(GameModule), void (*init)(GPU*), void (*event)(GPU*, Event*), void (*render)(GPU*)) {
+
     GameModule module = {
         .init = init,
         .event = event,
@@ -16,12 +17,18 @@ void call_fp(void (*f)(GameModule), void (*init)(GPU*), void (*event)(GPU*, Even
 }
 
 void loadModule(char* moduleName, ModuleInterfaceCallback onComplete) {
+
     void* handle = dlopen(moduleName, RTLD_NOW);
+
     printf("handle: %08X\n", (uint32_t)handle);
+
     if(!handle) {
+
         printf("dlerror: %s\n", dlerror());
+
         return;
     }
+
     void (*init)(GPU*) = dlsym(handle, "Init");
     void (*event)(GPU*, Event*) = dlsym(handle, "HandleEvent");
     void (*render)(GPU*) = dlsym(handle, "Render");

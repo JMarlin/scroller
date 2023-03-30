@@ -1,13 +1,12 @@
 #ifndef MODULE_H
 #define MODULE_H
 
-#include "gpu.h"
 #include "event.h"
 
 typedef struct GameModule_S {
-    void (*init)(GPU*);
-    void (*event)(GPU*, Event*);
-    void (*render)(GPU*);
+    void (*init)(struct Engine_S*);
+    void (*event)(struct Engine_S*, Event*);
+    void (*render)(struct Engine_S*);
 } GameModule;
 
 typedef void (*ModuleInterfaceCallback)(GameModule);

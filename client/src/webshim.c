@@ -1,5 +1,6 @@
 #include "webshim.h"
 #include "event.h"
+#include "engine.h"
 #include <emscripten.h>
 #include <stdlib.h>
 
@@ -12,9 +13,9 @@ void WS_InitEvents() {
 
 RenderProcedure g_render_proc = 0;
 
-void do_render_loop_proc(void* payload) {
+void do_render_loop_proc(Engine* engine) {
 
-    g_render_proc(payload);
+    g_render_proc(engine);
 }
 
 double get_canvas_width() {
@@ -23,7 +24,7 @@ double get_canvas_width() {
     }, 0);
 }
 
-void do_mouse_event(void* payload, int x, int y, int buttons) {
+void do_mouse_event(Engine* engine, int x, int y, int buttons) {
 
 	if(!g_event_proc) return;
 
@@ -35,10 +36,10 @@ void do_mouse_event(void* payload, int x, int y, int buttons) {
         .buttons = buttons
     };
  
-    g_event_proc(payload, (Event*)&mouse_event);
+    g_event_proc(engine, (Event*)&mouse_event);
 }
 
-void do_key_event(void* payload, int isUp, int code) {
+void do_key_event(Engine* engine, int isUp, int code) {
 
 	if(!g_event_proc) return;
 
@@ -48,7 +49,7 @@ void do_key_event(void* payload, int isUp, int code) {
         .code = code
     };
  
-    g_event_proc(payload, (Event*)&key_event);
+    g_event_proc(engine, (Event*)&key_event);
 }
 
 void WS_SetRenderLoopProc(RenderProcedure render_proc) {
@@ -60,7 +61,7 @@ void WS_SetRenderLoopProc(RenderProcedure render_proc) {
     );
 }
 
-void WS_StartRenderLoop(void* payload) {
+void WS_StartRenderLoop(Engine* engine) {
 
      EM_ASM_((
 
@@ -74,18 +75,18 @@ void WS_StartRenderLoop(void* payload) {
 
             Module.do_render_proc($0);
         });
-     ), payload);
+     ), engine);
 }
 
-void WS_StartEventDispatch(EventDispatchProcedure dispatch_proc, void* payload) {
+void WS_StartEventDispatch(EventDispatchProcedure dispatch_proc, Engine* engine) {
 
     g_event_proc = dispatch_proc;
 
     EM_ASM_((
-        Module.event_payload = $0;
+        Module.engine = $0;
         Module.do_mouse_event = Module.do_mouse_event || Module.cwrap('do_mouse_event', 'number', ['number', 'number', 'number', 'number']);
         Module.do_key_event = Module.do_key_event || Module.cwrap('do_key_event', 'number', ['number', 'number', 'number']);
-    ), payload);
+    ), engine);
 }
 
 WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
@@ -154,11 +155,11 @@ WS_Display WS_CreateDisplay(uint32_t w, uint32_t h) {
         };
 
         window.addEventListener('resize', resizer);
-        new_canvas.addEventListener('mousemove', function(e) { Module.do_mouse_event(Module.event_payload, e.offsetX, e.offsetY, e.buttons) });
-        new_canvas.addEventListener('mousedown', function(e) { Module.do_mouse_event(Module.event_payload, e.offsetX, e.offsetY, e.buttons) });
-        new_canvas.addEventListener('mouseup', function(e) { Module.do_mouse_event(Module.event_payload, e.offsetX, e.offsetY, e.buttons) });
-        window.addEventListener('keydown', function(e) { Module.do_key_event(Module.event_payload, 0, e.keyCode) } );
-        window.addEventListener('keyup', function(e) { Module.do_key_event(Module.event_payload, 1, e.keyCode) } );
+        new_canvas.addEventListener('mousemove', function(e) { Module.do_mouse_event(Module.engine, e.offsetX, e.offsetY, e.buttons) });
+        new_canvas.addEventListener('mousedown', function(e) { Module.do_mouse_event(Module.engine, e.offsetX, e.offsetY, e.buttons) });
+        new_canvas.addEventListener('mouseup', function(e) { Module.do_mouse_event(Module.engine, e.offsetX, e.offsetY, e.buttons) });
+        window.addEventListener('keydown', function(e) { Module.do_key_event(Module.engine, 0, e.keyCode) } );
+        window.addEventListener('keyup', function(e) { Module.do_key_event(Module.engine, 1, e.keyCode) } );
 
         new_canvas.style.cursor = 'none';
         new_canvas.style.position = 'absolute';
