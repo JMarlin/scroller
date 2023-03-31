@@ -301,7 +301,7 @@ void HandleEvent(Engine* engine, Event* event) {
         if(map_x < 8 && map_y < 8) {
 
             uint8_t* loc = &gpu->map[map_y * 64 + map_x];
-            *loc = (*loc + 1) % 4;
+            *loc = state->currentPaletteIndex;
 
             uint8_t* pSpriteByte = &gpu->tile[
                 (5 << 4) +
