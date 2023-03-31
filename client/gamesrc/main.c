@@ -229,10 +229,13 @@ void Init(Engine* engine) {
 
     gpu->map[64 * 7 + 10] = 0x00;
     gpu->attr[32 * 7 + 5] = 0x01;
+
     gpu->map[64 * 7 + 12] = 0x07;
     gpu->attr[32 * 7 + 6] = 0x01;
+
     gpu->map[64 * 7 + 14] = 0x08;
     gpu->attr[32 * 7 + 7] = 0x01;
+
     gpu->map[64 * 7 + 16] = 0x09;
     gpu->attr[32 * 7 + 8] = 0x01;
 
@@ -313,6 +316,12 @@ void HandleEvent(Engine* engine, Event* event) {
             *pSpriteByte = 
                 (*pSpriteByte &~(0x3 << shiftAmt)) |
                 ((*loc & 0x3) << shiftAmt);
+        }
+
+        if(map_x > 17 && map_y < 8) {
+
+            gpu->map[map_y * 64 + map_x] = 0x05;
+            gpu->attr[map_y * 32 + (map_x >> 1)] &= (map_x & 1) ? 0xF0 : 0x0F;
         }
 
         for(int i = 0; i < 3; i++) {
