@@ -3,6 +3,7 @@
 #include "../src/engine.h"
 #include <memory.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef void (*SliderChangeHandler)(Engine* engine, struct Slider_S*);
 
@@ -119,6 +120,11 @@ uint8_t IndicatorTile[] = {
     0b01010111, 0b11010101,
     0b01010101, 0b01010101
 };
+
+void saveTileSet(Engine* engine) {
+
+    engine->saveBuffer(engine, )
+}
 
 void setSlider(Engine* engine, Slider* slider, int value) {
 
@@ -355,6 +361,17 @@ void HandleEvent(Engine* engine, Event* event) {
                 break;
             }
         }
+    }
+
+    if(event->type == KEY) {
+
+        KeyEvent* keyEvent = (KeyEvent*)event;
+
+        if(keyEvent->isUp)
+            return;
+
+        if(keyEvent->code == 0x53)
+            saveTileSet(engine);
     }
 }
 
