@@ -1,5 +1,7 @@
 *.o
 *.so
 *.bc
+*.wasm
 dist/client/**/*
 dist/server/**/*
+.DS_Store
