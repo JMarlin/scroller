@@ -4,43 +4,23 @@ use std::io::{ Seek, SeekFrom, Read, Write };
 use std::fs::{ File };
 use std::str::{ FromStr };
 
+mod http_request;
+use http_request::{ HttpRequest };
+
+mod http_response;
+use http_response::{ HttpResponse };
+
+mod endpoint;
+use endpoint::*;
+
 const DEFAULT_PORT: &'static str = "8080";
-
-#[derive(Debug)]
-struct HttpRequest<'a> {
-    pub method: &'a str,
-    pub path: &'a str,
-    pub protocol: &'a str,
-    pub headers: Vec<(&'a str, &'a str)>,
-    pub body: &'a str
-}
-
-impl<'a> HttpRequest<'a> {
-
-    pub fn from_stream(tcp_stream: &TcpStream) -> HttpRequest<'a> {
-
-        //TODO: Actually implement
-
-        HttpRequest {
-            method: "GET",
-            path: "/", 
-            protocol: "HTTP/1.1", 
-            headers: vec![],
-            body: ""
-        }
-    }
-
-    pub fn print(&self) {
-
-        println!("{self:?}");
-    }
-}
 
 fn GetHttpRequest<'a>(tcp_stream: &TcpStream) -> HttpRequest<'a> {
 
     println!("Getting http request...");
 
-    let req = HttpRequest::from_stream(&tcp_stream);
+    let req = HttpRequest::from_stream(&tcp_stream)
+        .expect("Unable to read http request");
 
     println!("Done getting request");
 
@@ -131,29 +111,6 @@ fn NotFoundHandler(request: HttpRequest, tcp_stream: TcpStream) {
     };
 
     res.send(tcp_stream);
-}
-
-struct HttpResponse<'a> {
-    pub protocol: &'a str,
-    pub response_code: u32,
-    pub response_code_description: &'a str,
-    pub headers: Vec<(&'a str, &'a str)>
-}
-
-impl HttpResponse<'_> {
-
-    pub fn send(&self, tcp_stream: TcpStream) { }
-}
-
-struct Endpoint {
-    pub path: &'static str,
-    pub method: &'static str,
-    pub handler: fn(HttpRequest, TcpStream)
-}
-
-struct EndpointCollection {
-    pub not_found_handler: fn(HttpRequest, TcpStream),
-    pub endpoints: Vec<Endpoint>
 }
 
 fn main() {
