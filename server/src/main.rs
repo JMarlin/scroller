@@ -3,22 +3,48 @@ use std ::net::{ TcpStream, TcpListener };
 use std::io::{ Seek, SeekFrom, Read, Write };
 use std::fs::{ File };
 use std::str::{ FromStr };
-use std::marker::{ Sized };
 
 const DEFAULT_PORT: &'static str = "8080";
 
-fn GetHttpRequest(clientSock: i32) -> HttpRequest {
+#[derive(Debug)]
+struct HttpRequest<'a> {
+    pub method: &'a str,
+    pub path: &'a str,
+    pub protocol: &'a str,
+    pub headers: Vec<(&'a str, &'a str)>,
+    pub body: &'a str
+}
 
-/*  TODO
+impl<'a> HttpRequest<'a> {
+
+    pub fn from_stream(tcp_stream: &TcpStream) -> HttpRequest<'a> {
+
+        //TODO: Actually implement
+
+        HttpRequest {
+            method: "GET",
+            path: "/", 
+            protocol: "HTTP/1.1", 
+            headers: vec![],
+            body: ""
+        }
+    }
+
+    pub fn print(&self) {
+
+        println!("{self:?}");
+    }
+}
+
+fn GetHttpRequest<'a>(tcp_stream: &TcpStream) -> HttpRequest<'a> {
+
     println!("Getting http request...");
 
-    let req = ReadHttpRequest(SocketLoader(clientSock));
+    let req = HttpRequest::from_stream(&tcp_stream);
 
     println!("Done getting request");
 
     req
-*/
-    HttpRequest { }
 }
 
 fn HttpSendStatic(tcp_stream: TcpStream, file_path: &str, mime_type: &str) {
@@ -69,25 +95,25 @@ fn HttpSendStatic(tcp_stream: TcpStream, file_path: &str, mime_type: &str) {
 */
 }
 
-fn IndexHandler(request: &HttpRequest, tcp_stream: TcpStream) {
+fn IndexHandler(request: HttpRequest, tcp_stream: TcpStream) {
     HttpSendStatic(tcp_stream, "../client/index.html", "text/html");
 }
 
-fn StaticJSHandler(request: &HttpRequest, tcp_stream: TcpStream) {
+fn StaticJSHandler(request: HttpRequest, tcp_stream: TcpStream) {
     HttpSendStatic(tcp_stream, "../client/client.js", "application/javascript");
 }
 
-fn StaticWASMHandler(request: &HttpRequest, tcp_stream: TcpStream) {
+fn StaticWASMHandler(request: HttpRequest, tcp_stream: TcpStream) {
     HttpSendStatic(tcp_stream, "../client/client.wasm", "application/wasm");
 }
 
-fn StaticGameWASMHandler(request: &HttpRequest, tcp_stream: TcpStream) {
+fn StaticGameWASMHandler(request: HttpRequest, tcp_stream: TcpStream) {
 
     println!("\nSTATIC GAME WASM HANDLER\n");
     HttpSendStatic(tcp_stream, "../client/game.wasm", "application/wasm");
 }
 
-fn NotFoundHandler(request: &HttpRequest, tcp_stream: TcpStream) {
+fn NotFoundHandler(request: HttpRequest, tcp_stream: TcpStream) {
 
     let request_path = "/buttz"; //request.path;
     let body_message = format!("<center><h1>404: path {request_path} not found</h1></center>");
@@ -107,8 +133,6 @@ fn NotFoundHandler(request: &HttpRequest, tcp_stream: TcpStream) {
     res.send(tcp_stream);
 }
 
-struct HttpRequest { }
-
 struct HttpResponse<'a> {
     pub protocol: &'a str,
     pub response_code: u32,
@@ -124,11 +148,11 @@ impl HttpResponse<'_> {
 struct Endpoint {
     pub path: &'static str,
     pub method: &'static str,
-    pub handler: fn(&HttpRequest, TcpStream)
+    pub handler: fn(HttpRequest, TcpStream)
 }
 
 struct EndpointCollection {
-    pub not_found_handler: fn(&HttpRequest, TcpStream),
+    pub not_found_handler: fn(HttpRequest, TcpStream),
     pub endpoints: Vec<Endpoint>
 }
 
@@ -166,15 +190,16 @@ fn main() {
 
         println!("Server accepted a client...");
 
-        let req_path = "//client.wasm";
+        let req = GetHttpRequest(&tcp_stream);
+        req.print();
 
         let target_handler = endpoints.endpoints
             .iter()
-            .find(|e| e.path == req_path)
+            .find(|e| e.path == req.path)
             .map(|e| e.handler)
             .or_else(| | Some(endpoints.not_found_handler))
             .unwrap();
 
-        target_handler(&HttpRequest {  }, tcp_stream);
+        target_handler(req, tcp_stream);
     }
 }
