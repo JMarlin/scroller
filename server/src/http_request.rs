@@ -18,7 +18,7 @@ impl<'a> HttpRequest<'a> {
 
         Ok(HttpRequest {
             method: "GET",
-            path: "/", 
+            path: "/dingbatz", 
             protocol: "HTTP/1.1", 
             headers: vec![],
             body: ""

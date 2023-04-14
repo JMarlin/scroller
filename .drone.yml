@@ -4,25 +4,24 @@ name: default
 
 steps:
 - name: Build Server
-  image: gcc
+  image: rust
   commands:
     - mkdir dist
     - mkdir dist/server
     - cd server
-    - make server
-    - cd ..
-    - cp conf/prod_env.sh dist/server/env.sh
+    - CARGO_TARGET_DIR=../dist/server/ cargo build
+    - cp ../conf/prod_env.sh ..dist/server/env.sh
 
-- name: Build Client
-  image: emscripten/emsdk
-  volumes:
-    - name: cache
-      path: /emsdk/upstream/emscripten/cache
-  commands:
-    - mkdir dist/client
-    - cd client
-    - make client
-    - cd ..
+#- name: Build Client
+#  image: emscripten/emsdk
+#  volumes:
+#    - name: cache
+#      path: /emsdk/upstream/emscripten/cache
+#  commands:
+#    - mkdir dist/client
+#    - cd client
+#    - make client
+#    - cd ..
 
 - name: Apply environment settings
   image: cirocosta/alpine-envsubst
@@ -56,7 +55,7 @@ steps:
     - pip3 install -r requirements.txt
     - python3 ./proxdeploy.py .proxconf.yml
 
-volumes:
-- name: cache
-  host:
-    path: /tmp/drone/cache/emsdk
+#volumes:
+#- name: cache
+#  host:
+#    path: /tmp/drone/cache/emsdk

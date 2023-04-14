@@ -4,18 +4,15 @@ use std::io::{ Seek, SeekFrom, Read, Write };
 use std::fs::{ File };
 use std::str::{ FromStr };
 
-mod http_request;
-use http_request::{ HttpRequest };
+mod http_request; use http_request::*;
 
-mod http_response;
-use http_response::{ HttpResponse };
+mod http_response; use http_response::*;
 
-mod endpoint;
-use endpoint::*;
+mod endpoint; use endpoint::*;
 
 const DEFAULT_PORT: &'static str = "8080";
 
-fn GetHttpRequest<'a>(tcp_stream: &TcpStream) -> HttpRequest<'a> {
+fn get_http_request<'a>(tcp_stream: &TcpStream) -> HttpRequest<'a> {
 
     println!("Getting http request...");
 
@@ -27,13 +24,12 @@ fn GetHttpRequest<'a>(tcp_stream: &TcpStream) -> HttpRequest<'a> {
     req
 }
 
-fn HttpSendStatic(tcp_stream: TcpStream, file_path: &str, mime_type: &str) {
+fn http_send_static(mut tcp_stream: TcpStream, file_path: &str, mime_type: &str) {
 
     println!("Serving file '{file_path}' of type {mime_type}");
 
-/* TODO
-    let mut lengthStr = [0; 32];
-    let file = File::open(filePath)?;
+    let mut file = File::open(file_path)
+        .expect(&format!("Unable to open file {file_path}"));
 
     let length = file
         .seek(SeekFrom::End(0))
@@ -42,60 +38,63 @@ fn HttpSendStatic(tcp_stream: TcpStream, file_path: &str, mime_type: &str) {
     file.seek(SeekFrom::Start(0))
         .expect("Unable to rewind static file");
 
-    intToStrN(length, &lengthStr, 32);
+    let length_string = format!("{length}");
 
     let res = HttpResponse {
         protocol:  "HTTP/1.1",
-        responseCode: 200,
-        responseDescription: "OK",
-        headers: [
-            HttpHeader::new("Content-Type", mimeType),
-            HttpHeader::new("Content-Length", lengthStr),
-            HttpHeader::new("Cross-Origin-Opener-Policy", "same-origin"),
-            HttpHeader::new("Cross-Origin-Embedder-Policy", "require-corp")
+        response_code: 200,
+        response_code_description: "OK",
+        headers: vec![
+            ("Content-Type", &mime_type),
+            ("Content-Length", &length_string),
+            ("Cross-Origin-Opener-Policy", "same-origin"),
+            ("Cross-Origin-Embedder-Policy", "require-corp")
         ],
         body: ""
     };
 
-    res.send(tcp_stream);
+    res.send(&mut tcp_stream);
 
     let mut buffer = [0; 2048];
 
     loop {
 
-        let readCount = file.read(&buffer)?;
+        let read_count = file
+            .read(&mut buffer)
+            .expect("Unable to read from file buffer");
 
-        tcp_stream.write(&buffer[..readCount]);
+        tcp_stream
+            .write(&buffer[..read_count])
+            .expect("Unable to write to TCP stream");
 
-        if readCount < buffer.len() {
+        if read_count < buffer.len() {
 
             break;
         }
     }
-*/
 }
 
-fn IndexHandler(request: HttpRequest, tcp_stream: TcpStream) {
-    HttpSendStatic(tcp_stream, "../client/index.html", "text/html");
+fn index_handler(_request: HttpRequest, tcp_stream: TcpStream) {
+    http_send_static(tcp_stream, "../client/index.html", "text/html");
 }
 
-fn StaticJSHandler(request: HttpRequest, tcp_stream: TcpStream) {
-    HttpSendStatic(tcp_stream, "../client/client.js", "application/javascript");
+fn static_js_handler(_request: HttpRequest, tcp_stream: TcpStream) {
+    http_send_static(tcp_stream, "../client/client.js", "application/javascript");
 }
 
-fn StaticWASMHandler(request: HttpRequest, tcp_stream: TcpStream) {
-    HttpSendStatic(tcp_stream, "../client/client.wasm", "application/wasm");
+fn static_wasm_handler(_request: HttpRequest, tcp_stream: TcpStream) {
+    http_send_static(tcp_stream, "../client/client.wasm", "application/wasm");
 }
 
-fn StaticGameWASMHandler(request: HttpRequest, tcp_stream: TcpStream) {
+fn static_game_wasm_handler(_request: HttpRequest, tcp_stream: TcpStream) {
 
     println!("\nSTATIC GAME WASM HANDLER\n");
-    HttpSendStatic(tcp_stream, "../client/game.wasm", "application/wasm");
+    http_send_static(tcp_stream, "../client/game.wasm", "application/wasm");
 }
 
-fn NotFoundHandler(request: HttpRequest, tcp_stream: TcpStream) {
+fn not_found_handler(request: HttpRequest, mut tcp_stream: TcpStream) {
 
-    let request_path = "/buttz"; //request.path;
+    let request_path = request.path;
     let body_message = format!("<center><h1>404: path {request_path} not found</h1></center>");
     let body_message_length = body_message.len();
     let body_message_length_str = format!("{body_message_length}");
@@ -107,21 +106,22 @@ fn NotFoundHandler(request: HttpRequest, tcp_stream: TcpStream) {
         headers: vec![
             ("Content-Type", "text/html"),
             ("Content-Length", &body_message_length_str)
-        ]
+        ],
+        body: &body_message
     };
 
-    res.send(tcp_stream);
+    res.send(&mut tcp_stream);
 }
 
 fn main() {
 
     let endpoints = EndpointCollection {
-        not_found_handler: NotFoundHandler,
+        not_found_handler: not_found_handler,
         endpoints: vec![
-            Endpoint { path: "/",             method: "GET", handler: IndexHandler          },
-            Endpoint { path: "//client.js",   method: "GET", handler: StaticJSHandler       },
-            Endpoint { path: "//client.wasm", method: "GET", handler: StaticWASMHandler     },
-            Endpoint { path: "//game.wasm",   method: "GET", handler: StaticGameWASMHandler } ],
+            Endpoint { path: "/",             method: "GET", handler: index_handler          },
+            Endpoint { path: "//client.js",   method: "GET", handler: static_js_handler       },
+            Endpoint { path: "//client.wasm", method: "GET", handler: static_wasm_handler     },
+            Endpoint { path: "//game.wasm",   method: "GET", handler: static_game_wasm_handler } ],
     };
 
     let port_string = env::var("FUNCTIONS_CUSTOMHANDLER_PORT")
@@ -147,7 +147,7 @@ fn main() {
 
         println!("Server accepted a client...");
 
-        let req = GetHttpRequest(&tcp_stream);
+        let req = get_http_request(&tcp_stream);
         req.print();
 
         let target_handler = endpoints.endpoints
