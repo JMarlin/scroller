@@ -5,14 +5,12 @@ use std::fs::{ File };
 use std::str::{ FromStr };
 
 mod http_request; use http_request::*;
-
 mod http_response; use http_response::*;
-
 mod endpoint; use endpoint::*;
 
 const DEFAULT_PORT: &'static str = "8080";
 
-fn get_http_request<'a>(tcp_stream: &TcpStream) -> HttpRequest<'a> {
+fn get_http_request<'a>(tcp_stream: &TcpStream) -> HttpRequest {
 
     println!("Getting http request...");
 
@@ -118,10 +116,10 @@ fn main() {
     let endpoints = EndpointCollection {
         not_found_handler: not_found_handler,
         endpoints: vec![
-            Endpoint { path: "/",             method: "GET", handler: index_handler          },
-            Endpoint { path: "//client.js",   method: "GET", handler: static_js_handler       },
-            Endpoint { path: "//client.wasm", method: "GET", handler: static_wasm_handler     },
-            Endpoint { path: "//game.wasm",   method: "GET", handler: static_game_wasm_handler } ],
+            Endpoint { path: "/",             method: HttpMethod::Get, handler: index_handler          },
+            Endpoint { path: "//client.js",   method: HttpMethod::Get, handler: static_js_handler       },
+            Endpoint { path: "//client.wasm", method: HttpMethod::Get, handler: static_wasm_handler     },
+            Endpoint { path: "//game.wasm",   method: HttpMethod::Get, handler: static_game_wasm_handler } ],
     };
 
     let port_string = env::var("FUNCTIONS_CUSTOMHANDLER_PORT")
@@ -152,7 +150,7 @@ fn main() {
 
         let target_handler = endpoints.endpoints
             .iter()
-            .find(|e| e.path == req.path)
+            .find(|e| e.path == req.path && e.method == req.method)
             .map(|e| e.handler)
             .or_else(| | Some(endpoints.not_found_handler))
             .unwrap();
