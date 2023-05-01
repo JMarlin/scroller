@@ -148,13 +148,19 @@ fn main() {
         let req = get_http_request(&tcp_stream);
         req.print();
 
+        /*
         let target_handler = endpoints.endpoints
             .iter()
             .find(|e| e.path == req.path && e.method == req.method)
             .map(|e| e.handler)
             .or_else(| | Some(endpoints.not_found_handler))
             .unwrap();
+        */
 
-        target_handler(req, tcp_stream);
+        let req_path = if req.path == "/" { "/index.html" } else { &req.path };
+
+        http_send_static(tcp_stream, &format!("../client{req_path}"), if req_path.ends_with(".html") { "text/html" } else if req_path.ends_with(".wasm") { "application/wasm" } else if req_path.ends_with(".js") { "application/javascript" } else { "text/plain" });
+
+        //target_handler(req, tcp_stream);
     }
 }
