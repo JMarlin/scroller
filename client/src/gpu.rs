@@ -136,7 +136,7 @@ impl Gpu {
         self.tile[tile_index][Gpu::tile_byte_offset_from_coordinates_and_attribute(x, y, attr)]
     }
 
-    fn tile_pixel_palette_index_from_tile_byte_coordinates_and_attribute(tile_byte: u8, x: u8, y: u8, attr: Attribute) -> usize {
+    fn tile_pixel_palette_index_from_tile_byte_coordinates_and_attribute(tile_byte: u8, x: u8, attr: Attribute) -> usize {
         let tile_x_subaddr = ((x & 0x03) ^ if attr.is_h_mirrored() { 0x03 } else { 0x00 }) << 1;
 
         ((tile_byte >> (6 - tile_x_subaddr)) & 0x03) as usize
@@ -154,7 +154,7 @@ impl Gpu {
             sprite.get_attribute()
         );
 
-        Gpu::tile_pixel_palette_index_from_tile_byte_coordinates_and_attribute(tile_byte, virtual_x, virtual_y, sprite.get_attribute())
+        Gpu::tile_pixel_palette_index_from_tile_byte_coordinates_and_attribute(tile_byte, virtual_x, sprite.get_attribute())
     }
 
     fn attribute_from_tile_map_index(&self, tile_map_index: usize) -> Attribute {
@@ -165,7 +165,7 @@ impl Gpu {
         let attribute = self.attribute_from_tile_map_index(tile_map_index);
         let tile_byte = self.tile_byte_from_tile_map_index_coordinates_and_attribute(self.map[tile_map_index], addr.get_xpos(), addr.get_ypos(), attribute);
 
-        Gpu::tile_pixel_palette_index_from_tile_byte_coordinates_and_attribute(tile_byte, addr.get_xpos(), addr.get_ypos(), attribute)
+        Gpu::tile_pixel_palette_index_from_tile_byte_coordinates_and_attribute(tile_byte, addr.get_xpos(), attribute)
     }
 
     fn pixel_color_from_palette_index_and_attribute(&self, tile_pixel_palette_index: usize, attr: Attribute) -> u32 {
