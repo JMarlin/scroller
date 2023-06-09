@@ -1,10 +1,10 @@
-use web_sys::MouseEvent;
-
 use crate::gpu::{ Gpu, Tile };
 
+pub struct MouseEventData { pub x: u32, pub y: u32, pub buttons: u32 }
+pub struct KeyEventData { code: u32, is_up: bool }
 pub enum Event {
-    MouseEvent { x: u32, y: u32, buttons: u32 },
-    KeyEvent { code: u32, is_up: bool }
+    MouseEvent(MouseEventData),
+    KeyEvent(KeyEventData)
 }
 
 pub struct Slider {
@@ -259,16 +259,16 @@ impl Game {
         }
     }
 
-    fn handle_event(&mut self, gpu: &mut Gpu, event: &Event) {
+    pub fn handle_event(&mut self, gpu: &mut Gpu, event: Event) {
         match event {
-            Event::MouseEvent { x, y, buttons } => {
-                self.x_position = *x;
-                self.y_position = *y;
+            Event::MouseEvent(mouse_data) => {
+                self.x_position = mouse_data.x;
+                self.y_position = mouse_data.y;
 
                 let map_x = (self.x_position >> 3) as usize;
                 let map_y = (self.y_position >> 3) as usize;
 
-                if *buttons == 0 { return; }
+                if mouse_data.buttons == 0 { return; }
 
                 if map_x < 8 && map_y < 8 {
                     let loc = &mut gpu.map[map_y * 64 + map_x];
@@ -296,14 +296,24 @@ impl Game {
                         };
                 }
         
+                let mut slider_hit = false;
+
                 for slider in &mut self.sliders {
                     if map_y as i32 == slider.position {
                         slider.set(map_x as i32);
-        
+                        slider_hit = true;
+                        slider.draw(gpu);
+
                         break;
-                    }
+                    } 
                 }
-        
+
+                if slider_hit {
+                    self.update_red_value(gpu, self.sliders[0].get());
+                    self.update_green_value(gpu, self.sliders[1].get());
+                    self.update_blue_value(gpu, self.sliders[2].get());
+                }
+       
                 for i in 0..4 {
         
                     if map_y == 7 && map_x == (10 + (2 * i)) {
@@ -321,14 +331,25 @@ impl Game {
                         self.sliders[0].set(((color >>  0) & 0xFF) >> 3);
                         self.sliders[1].set(((color >>  8) & 0xFF) >> 3);
                         self.sliders[2].set(((color >> 16) & 0xFF) >> 3);
-        
+
+                        self.sliders[0].draw(gpu);
+                        self.sliders[1].draw(gpu);
+                        self.sliders[2].draw(gpu);
+
                         break;
                     }
                 }
             },
-            Event::KeyEvent { code, is_up } => {
+            Event::KeyEvent(key_data) => {
             }
         }
+    }
+
+    pub fn step_logic(&mut self, gpu: &mut Gpu) {
+        gpu.sprites[0] =
+            (gpu.sprites[0] & 0x0000FFFF)
+            | ((self.x_position & 0xFF) << 24)
+            | ((self.y_position & 0xFF) << 16);
     }
 
 }
