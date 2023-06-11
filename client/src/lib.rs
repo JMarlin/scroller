@@ -133,6 +133,9 @@ fn mouse_handler(event: web_sys::MouseEvent, game: &mut Game, gpu: &mut Gpu, can
 
 #[wasm_bindgen(start)]
 fn run() {
+
+    set_panic_hook();
+
     let mut fb = [0xFFu8; 256 * 4 * 240];
     let document = web_sys::window().unwrap().document().unwrap();
 

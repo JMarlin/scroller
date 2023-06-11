@@ -12,8 +12,16 @@ pub struct Slider {
     position: i32
 }
 
+fn print_to_console(content: &str) {
+    let args = js_sys::Array::new();
+    
+    args.push(&wasm_bindgen::JsValue::from_str(content));
+    web_sys::console::log(&args);
+}
+
 impl Slider {
     pub fn set(&mut self, value: i32) {
+        print_to_console(&format!("Setting slider value to {value}"));
         self.value = value;
     }
 
@@ -23,9 +31,15 @@ impl Slider {
 
     pub fn draw(&self, gpu: &mut Gpu) {
         let map_start = 64 * self.position as usize + 1;
+        let color_end = map_start + self.value as usize;
+        let clear_start = color_end;
+        let clear_end = 64 * self.position as usize + 31;
 
-        for index in &mut gpu.map[map_start..map_start + self.value as usize + 1] { *index = 2 }
-        for index in &mut gpu.map[map_start + self.value as usize + 1..map_start + (33 - self.value as usize)] { *index = 0 }
+        print_to_console(&format!("Drawing blocks from {map_start} to {color_end}"));
+        for index in &mut gpu.map[map_start..color_end] { *index = 2 }
+
+        print_to_console(&format!("Drawing clears from {clear_start} to {clear_end}"));
+        for index in &mut gpu.map[clear_start..clear_end] { *index = 0 }
     }
 }
 
@@ -168,7 +182,7 @@ impl Game {
     fn update_red_value(&mut self, gpu: &mut Gpu, value: i32) {
         self.set_current_color(
             gpu,
-            (self.get_current_color(gpu)) |
+            (self.get_current_color(gpu) & !(0xFF << 0)) |
                 (((value << 3) & 0xFF) << 0) as u32
         )
     }
@@ -176,7 +190,7 @@ impl Game {
     fn update_green_value(&mut self, gpu: &mut Gpu, value: i32) {
         self.set_current_color(
             gpu,
-            (self.get_current_color(gpu)) |
+            (self.get_current_color(gpu) & !(0xFF << 8)) |
                 (((value << 3) & 0xFF) << 8) as u32
         )
     }
@@ -184,7 +198,7 @@ impl Game {
     fn update_blue_value(&mut self, gpu: &mut Gpu, value: i32) {
         self.set_current_color(
             gpu,
-            (self.get_current_color(gpu)) |
+            (self.get_current_color(gpu) & !(0xFF << 16)) |
                 (((value << 3) & 0xFF) << 16) as u32
         )
     }
@@ -299,7 +313,9 @@ impl Game {
                 let mut slider_hit = false;
 
                 for slider in &mut self.sliders {
-                    if map_y as i32 == slider.position {
+                    if map_x > 0 &&
+                       map_x < 31 &&
+                       map_y as i32 == slider.position {
                         slider.set(map_x as i32);
                         slider_hit = true;
                         slider.draw(gpu);
@@ -327,10 +343,18 @@ impl Game {
                         self.current_palette_index = i;
         
                         let color = self.get_current_color(gpu) as i32;
+
+                        let red_percent = ((color >> 0) & 0xFF) as f32 / 255.0;
+                        let green_percent = ((color >> 8) & 0xFF) as f32 / 255.0;
+                        let blue_percent = ((color >> 16) & 0xFF) as f32 / 255.0;
+
+                        let red_slider_value = (red_percent * 30.0).ceil() as i32;
+                        let green_slider_value = (green_percent * 30.0).ceil() as i32;
+                        let blue_slider_value = (blue_percent * 30.0).ceil() as i32;
         
-                        self.sliders[0].set(((color >>  0) & 0xFF) >> 3);
-                        self.sliders[1].set(((color >>  8) & 0xFF) >> 3);
-                        self.sliders[2].set(((color >> 16) & 0xFF) >> 3);
+                        self.sliders[0].set(red_slider_value);
+                        self.sliders[1].set(green_slider_value);
+                        self.sliders[2].set(blue_slider_value);
 
                         self.sliders[0].draw(gpu);
                         self.sliders[1].draw(gpu);
